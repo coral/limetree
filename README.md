@@ -26,3 +26,10 @@ Connections between the boards is as following:
 | GND   | -> | GND       |
 
 ![board](board.jpg)
+
+
+# BONUS!
+
+I'm adding the Sketchup Model and .dae file for a 3D printable case for this device on which you can slap a frosted piece of plexi on top (fits without screws) and have a nice box for this project.
+
+![case](case.jpg)
