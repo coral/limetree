@@ -2,95 +2,95 @@
  * hello
  */
 
-#include <adafruit_neopixel.h>
+#include <Adafruit_NeoPixel.h>
 #include <bluefruit.h>
-#include <wire.h>
-#include <spi.h>
-#include <adafruit_pn532.h>
+#include <Wire.h>
+#include <SPI.h>
+#include <Adafruit_PN532.h>
 
 
 #define pn532_ss		(16)
 #define numpixels		32
 
-adafruit_pn532 nfc(pn532_ss);
+Adafruit_PN532 nfc(pn532_ss);
 
-bleuart bleuart;
+BLEUart bleuart;
 
 // function prototypes for packetparser.cpp
-uint8_t readpacket (bleuart *ble_uart, uint16_t timeout);
+uint8_t readPacket (BLEUart *ble_uart, uint16_t timeout);
 float   parsefloat (uint8_t *buffer);
-void    printhex   (const uint8_t * data, const uint32_t numbytes);
+void    printHex   (const uint8_t * data, const uint32_t numBytes);
 
 // packet buffer
 extern uint8_t packetbuffer[];
 
 uint8_t bg = 2;
 
-adafruit_neopixel pixels = adafruit_neopixel(numpixels, 27, neo_grb + neo_khz800);
+Adafruit_NeoPixel pixels = Adafruit_NeoPixel(numpixels, 27, NEO_GRB + NEO_KHZ800);
 
 void setup(void)
 {
-	serial.begin(115200);
+	Serial.begin(115200);
 
-	bluefruit.begin();
+	Bluefruit.begin();
 	
 	// set max power. accepted values are: -40, -30, -20, -16, -12, -8, -4, 0, 4
-	bluefruit.settxpower(4);
-	bluefruit.setname("atpscan");
+	Bluefruit.setTxPower(4);
+	Bluefruit.setName("atpscan");
 
 	// configure and start the ble uart service
 	bleuart.begin();
 
-	// set up and start advertising
-	startadv();
+	// set up and start Advertising
+	startAdv();
 
-	serial.begin(115200);
-	serial.println("starting!");
+	Serial.begin(115200);
+	Serial.println("starting!");
 
 	nfc.begin();
 
-	uint32_t versiondata = nfc.getfirmwareversion();
+	uint32_t versiondata = nfc.getFirmwareVersion();
 	if (! versiondata) {
-		serial.print("didn't find pn53x board");
+		Serial.print("didn't find pn53x board");
 		while (1); // halt
 	}
 	// got ok data, print it out!
-	serial.print("found chip pn5"); serial.println((versiondata>>24) & 0xff, hex); 
-	serial.print("firmware ver. "); serial.print((versiondata>>16) & 0xff, dec); 
-	serial.print('.'); serial.println((versiondata>>8) & 0xff, dec);
-	
+  Serial.print("Found chip PN5"); Serial.println((versiondata>>24) & 0xFF, HEX); 
+  Serial.print("Firmware ver. "); Serial.print((versiondata>>16) & 0xFF, DEC); 
+  Serial.print('.'); Serial.println((versiondata>>8) & 0xFF, DEC);
+  
 	// configure board to read rfid tags
-	nfc.samconfig();
+	nfc.SAMConfig();
 
 	//start neopixel
 	pixels.begin();
 	
 }
 
-void startadv(void)
+void startAdv(void)
 {
-	// advertising packet
-	bluefruit.advertising.addflags(ble_gap_adv_flags_le_only_general_disc_mode);
-	bluefruit.advertising.addtxpower();
+	// Advertising packet
+	Bluefruit.Advertising.addFlags(BLE_GAP_ADV_FLAGS_LE_ONLY_GENERAL_DISC_MODE);
+	Bluefruit.Advertising.addTxPower();
 	
 	// include the ble uart (aka 'nus') 128-bit uuid
-	bluefruit.advertising.addservice(bleuart);
+	Bluefruit.Advertising.addService(bleuart);
 
 	// secondary scan response packet (optional)
-	// since there is no room for 'name' in advertising packet
-	bluefruit.scanresponse.addname();
+	// since there is no room for 'name' in Advertising packet
+	Bluefruit.ScanResponse.addName();
 
-	/* start advertising
-	 * - enable auto advertising if disconnected
+	/* start Advertising
+	 * - enable auto Advertising if disconnected
 	 * - interval:  fast mode = 20 ms, slow mode = 152.5 ms
 	 * - timeout for fast mode is 30 seconds
 	 * - start(timeout) with timeout = 0 will advertise forever (until connected)
 	 */
 	
-	bluefruit.advertising.restartondisconnect(true);
-	bluefruit.advertising.setinterval(32, 244);    // in unit of 0.625 ms
-	bluefruit.advertising.setfasttimeout(30);      // number of seconds in fast mode
-	bluefruit.advertising.start(0);                // 0 = don't stop advertising after n seconds  
+	Bluefruit.Advertising.restartOnDisconnect(true);
+	Bluefruit.Advertising.setInterval(32, 244);    // in unit of 0.625 ms
+	Bluefruit.Advertising.setFastTimeout(30);      // number of seconds in fast mode
+	Bluefruit.Advertising.start(0);                // 0 = don't stop Advertising after n seconds  
 }
 
 /**************************************************************************/
@@ -103,15 +103,15 @@ void loop(void)
 
 	uint8_t success;
 	uint8_t uid[] = { 0, 0, 0, 0, 0, 0, 0 };  // buffer to store the returned uid
-	uint8_t uidlength; 
+	uint8_t uidLength; 
 
 	for(int i=0;i<numpixels;i++){
-		pixels.setpixelcolor(i, pixels.color(0,0,bg));
+		pixels.setPixelColor(i, pixels.Color(0,0,bg));
 	}
 	pixels.show();
 
-	
-	success = nfc.readpassivetargetid(pn532_mifare_iso14443a, uid, &uidlength);
+	Serial.print("loop");
+	success = nfc.readPassiveTargetID(PN532_MIFARE_ISO14443A, uid, &uidLength);
 
 	if (success) {
 
@@ -126,13 +126,13 @@ void loop(void)
 		 * 
 		 */
 
-		uint8_t message[uidlength+4];
+		uint8_t message[uidLength+4];
 		message[0] = 0x00;
-		message[1] = uidlength;
+		message[1] = uidLength;
 		message[2] = 0x00;
-		for (int n=0; n<uidlength+1;n++)
+		for (int n=0; n<uidLength+1;n++)
 		{ 
-			if(n < uidlength)
+			if(n < uidLength)
 			{
 				message[n+3] = uid[n];
 			} else 
@@ -146,7 +146,7 @@ void loop(void)
 		bleuart.write( message, sizeof(message) );
 
 		//print to console
-		nfc.printhex(message, sizeof(message));
+		//nfc.printHex(message, sizeof(message));
 
 		//flash neopixels
 		showsuccess();
@@ -161,7 +161,7 @@ void showsuccess()
 	for(int x=35;x>=0;x--) {
 		for(int i=0;i<numpixels;i++){
 			
-			pixels.setpixelcolor(i, pixels.color(0,x,0));
+			pixels.setPixelColor(i, pixels.Color(0,x,0));
 		}
 		pixels.show();
 		delay(40);
@@ -174,7 +174,7 @@ void showsuccess()
  * obligatory adafruit mit stuff
  */
 /*********************************************************************
- this is an example for our nrf52 based bluefruit le modules
+ this is an example for our nrf52 based Bluefruit le modules
 
  pick one up today in the adafruit shop!
 
