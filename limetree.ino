@@ -36,13 +36,15 @@ void setup(void)
 	
 	// set max power. accepted values are: -40, -30, -20, -16, -12, -8, -4, 0, 4
 	Bluefruit.setTxPower(4);
-	Bluefruit.setName("atpscan");
+	Bluefruit.setName("ATPSCAN");
 
 	// configure and start the ble uart service
 	bleuart.begin();
 
 	// set up and start Advertising
 	startAdv();
+
+  Bluefruit.autoConnLed(false);
 
 	Serial.begin(115200);
 	Serial.println("starting!");
@@ -111,7 +113,7 @@ void loop(void)
 	pixels.show();
 
 	Serial.print("loop");
-	success = nfc.readPassiveTargetID(PN532_MIFARE_ISO14443A, uid, &uidLength);
+	success = nfc.readPassiveTargetID(PN532_MIFARE_ISO14443A, uid, &uidLength, 3000);
 
 	if (success) {
 
