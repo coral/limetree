@@ -145,7 +145,10 @@ void loop(void)
 		}
 
 		//write this out
-		bleuart.write( message, sizeof(message) );
+    if(Bluefruit.connected()) {
+      bleuart.write( message, sizeof(message) );
+    }
+    
 
 		//print to console
 		//nfc.printHex(message, sizeof(message));
